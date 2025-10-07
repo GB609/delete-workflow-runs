@@ -21,17 +21,27 @@ inputs:
   retain_days:
     description: 'Days-worth of runs to keep for each workflow'
     required: true
-    default: 30
+    default: '30'
 
   keep_minimum_runs:
     description: 'Minimum runs to keep for each workflow'
     required: true
-    default: 6
+    default: '6'
+  
+  minimum_ignore_deleted_branches:
+    description: 'When true, workflows whose target branches were deleted will not count for minimum runs to keep.'
+    required: false
+    default: 'false'
 
   branch_specific_minimum_runs:
     description: 'When true, the number of minimum runs is counted per branch instead of overall'
     required: false
-    default: false
+    default: 'false'
+  
+  workflow_specific_minimum_runs:
+    description: 'When true, the number of minimum runs is counted per workflow type instead of overall'
+    required: false
+    default: 'false'
 
   delete_workflow_pattern:
     description: |
@@ -75,7 +85,7 @@ runs:
   # with node16, I got this error:
   #   fetch is not set. Please pass a fetch implementation as new Octokit({ request: { fetch }}). 
   #   Learn more at https://github.com/octokit/octokit.js/#fetch-missing
-  using: 'node20'
+  using: 'node24'
   main: 'dist/index.js'
 
 branding:

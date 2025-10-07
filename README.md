@@ -40,29 +40,43 @@ Amount of days used to compare with the retention days of each workflow
 #### Default: 6
 Minimum runs to keep for each workflow
 
-### 5. `branch_specific_minimum_runs`
+### 5. `minimum_ignore_deleted_branches`
+#### Required: NO
+#### Default: false
+Normally, the deletion filter `keep_minimum_runs` does not care if the branch associated with a run still exists. It will just try to maintain at least N entries for each workflow.
+This setting allows to only consider still existing branches for which to keep a minimum number of workflow runs. 
+When this property is set to true, the minimum number of runs is not maintained for branches which were deleted. This can be used to keep a branch-specific amount of minimum runs for all existing branches while allowing to delete old runs of deleted branches.
+
+### 6. `branch_specific_minimum_runs`
 #### Required: NO
 #### Default: false
 When set, all workflows are grouped by branch and `keep_mininum_runs` will be applied to each group individually.
+Can be combined with `workflow_specific_minimum_runs`.
 
-### 6. `delete_workflow_pattern`
+### 7. `workflow_specific_minimum_runs`
+#### Required: NO
+#### Default: false
+When set, all workflows are grouped by workflow id and `keep_mininum_runs` will be applied to each group individually.
+Can be combined with `branch_specific_minimum_runs`.
+
+### 8. `delete_workflow_pattern`
 #### Required: NO
 Name or filename of the workflow (if not set, all workflows are targeted).  
 _Multiple values permitted as a comma-separated list, but names used should not contain comma_
 
-### 7. `delete_workflow_by_state_pattern`
+### 9. `delete_workflow_by_state_pattern`
 #### Required: NO
 #### Default: 'ALL'
 Filter workflows by state: active, deleted, disabled_fork, disabled_inactivity, disabled_manually  
 _Multiple state values permitted as a comma-separated list_
 
-### 8. `delete_run_by_conclusion_pattern`
+### 10. `delete_run_by_conclusion_pattern`
 #### Required: NO
 #### Default: 'ALL'
 Remove runs based on conclusion: action_required, cancelled, failure, skipped, success  
 _Multiple conclusion values permitted as a comma-separated list_
 
-### 9. `branch_filter`
+### 11. `branch_filter`
 #### Required: NO
 #### Default: '[".*"]'
 This allows the action to only target workflow runs triggered by specific branches.
@@ -70,16 +84,16 @@ This allows the action to only target workflow runs triggered by specific branch
 Expected value is a JSON array of regular expressions, e.g:  
 `'["main", "release/.*", "test/.*"]'` - only workflows whose branch names match `main`, `release/...` or `test/...` will be deleted (if no other filters prevent it).
 
-### 10. `dry_run`
+### 12. `dry_run`
 #### Required: NO
 Logs simulated changes, no deletions are performed
 ##
 
-### 11. `check_branch_existence`
+### 13. `check_branch_existence`
 #### Required: NO
 If true, the removage of a workflow is skipped, when a run is attached to a existing branch. Set to true avoids that check runs are deleted and the checks are not more present. (excludes main)
 
-### 12. `check_branch_existence_exceptions`
+### 14. `check_branch_existence_exceptions`
 #### Required: NO
 #### Default: main
 Only applies when `check_branch_existence=true`.  
@@ -89,7 +103,7 @@ _Multiple names are permitted as a comma-separated list. Contrary to branch_filt
 
 ##
 
-### 13. `check_pullrequest_exist`
+### 15. `check_pullrequest_exist`
 #### Required: NO
 If true, the Runs will be checked for linkage to a PR.
 ##
