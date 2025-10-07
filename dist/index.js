@@ -77,13 +77,14 @@ async function executeWorkflowDeletion(octokit, repo, workflowRuns, reason = nul
     if (deletes > 0) {
       console.log(`✅ ${deletes} runs of '${name}' workflow deleted.`);
       console.summary(
-        '*:white_check_mark: Deleted',
+        ' * :white_check_mark: Deleted',
         `${deletes}/${wf_counts[name]}`,
+        `runs of ${name}`,
         (failure_counts[name] || 0) > 0 ? ` (:burn: Failed: ${failure_counts[name]})` : '',
-        reason != null ? 'because: ' + reason : ''
+        reason != null ? ': ' + reason : ''
       )
     } else if (failure_counts[name] > 0) {
-      console.summary(`*:burn: Deleting ${failure_counts[name]} workflow runs of '${name}' completely failed.`);
+      console.summary(` * :burn: Deleting ${failure_counts[name]} workflow runs of '${name}' completely failed.`);
     }
   })
   return delete_count;
@@ -234,8 +235,8 @@ async function run() {
         let skip_runs = [];
         wf_runs = wf_runs.sort((a, b) => { return a.id - b.id; });
 
-        if (keep_minimum_runs !== 0){
-          if(minimum_ignore_deleted){
+        if (keep_minimum_runs !== 0) {
+          if (minimum_ignore_deleted) {
             skip_runs = wf_runs.filter(run => run._branchExists)
           } else {
             skip_runs = wf_runs;
@@ -247,7 +248,7 @@ async function run() {
           }
         }
         console.log(`💬 Deleting ${wf_runs.length} runs for '${workflow.name}' workflow on '${branchName}'`);
-        await executeWorkflowDeletion(octokit, repo, wf_runs, 'They matched at least one critera');
+        await executeWorkflowDeletion(octokit, repo, wf_runs, `from branch '${branchName.split(":")[0]}'`);
       }
     }
   }
