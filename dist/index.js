@@ -1,7 +1,7 @@
 const core = require("@actions/core");
 
 function csv_string_to_array(listString) {
-  if (typeof listString == "string") {
+  if (typeof listString == "string" && listString.length > 0) {
     return listString.trim().split(/[ ]*,[ ]*/);
   }
   return []
