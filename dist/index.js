@@ -181,6 +181,8 @@ async function run() {
     for (const workflow of workflows) {
       core.debug(`Workflow: ${workflow.name} ${workflow.id} ${workflow.state}`);
       let del_runs = {};
+      //count the number of kept runs, for correctly handling keep_minimum...
+      let kept_runs = {};
       // Execute the API "List workflow runs for a repository", see 'https://octokit.github.io/rest.js/v18#actions-list-workflow-runs-for-repo'
       const runs = await octokit
         .paginate("GET /repos/:owner/:repo/actions/workflows/:workflow_id/runs", repo.with({ workflow_id: workflow.id }));
@@ -215,36 +217,41 @@ async function run() {
           core.debug(`  Skipping '${workflow.name}' workflow run ${run.id} because conclusion was ${run.conclusion}`);
           continue;
         }
+        run._branchExists = branchExists;
         const created_at = new Date(run.created_at);
         const current = new Date();
         const ELAPSE_ms = current.getTime() - created_at.getTime();
         const ELAPSE_days = ELAPSE_ms / (1000 * 3600 * 24);
+        let branchName = minimum_run_is_branch_specific ? run.head_branch || 'ALL_BRANCHES' : 'ALL_BRANCHES';
+        branchName += minimum_run_is_flow_specific ? `:${workflow.name}` : '';
+        kept_runs[branchName] ||= 0;
+
         if (ELAPSE_days >= retain_days) {
-          let branchName = minimum_run_is_branch_specific ? run.head_branch || 'ALL_BRANCHES' : 'ALL_BRANCHES';
-          branchName += minimum_run_is_flow_specific ? `:${workflow.name}` : '';
           core.debug(`  Added to del list (${branchName}): '${workflow.name}' workflow run ${run.id}`);
           let targetList = del_runs[branchName] ||= [];
           targetList.push(run);
-          run._branchExists = branchExists;
         } else {
+          kept_runs[branchName]++;
           console.log(`👻 Skipped '${workflow.name}' workflow run ${run.id}: created at ${run.created_at} because ${ELAPSE_days.toFixed(2)}d < ${retain_days}d`);
         }
       }
       core.debug(`Delete list for '${workflow.name}' is ${del_runs.length} items`);
       for (let [branchName, wf_runs] of Object.entries(del_runs)) {
-        let skip_runs = [];
-        wf_runs = wf_runs.sort((a, b) => { return a.id - b.id; });
 
-        if (keep_minimum_runs !== 0) {
+        if (kept_runs[branchName] < keep_minimum_runs) {
+          let skip_runs = [];
+          wf_runs = wf_runs.sort((a, b) => { return a.id - b.id; });
+          
           if (minimum_ignore_deleted) {
             skip_runs = wf_runs.filter(run => run._branchExists)
           } else {
             skip_runs = wf_runs;
           }
-          skip_runs = skip_runs.slice(-keep_minimum_runs);
+          let delete_candidates_tokeep = keep_minimum_runs - kept_runs[branchName];
+          skip_runs = skip_runs.slice(-delete_candidates_tokeep);
           wf_runs = wf_runs.filter(run => !skip_runs.includes(run))
-          for (const Skipped of skip_runs) {
-            console.log(`👻 Skipped '${workflow.name}' workflow run ${Skipped.id}: created at ${Skipped.created_at} because of keep_minimum_runs=${keep_minimum_runs}`);
+          for (let skipped_run of skip_runs) {
+            console.log(`👻 Skipped '${workflow.name}' workflow run ${skipped_run.id}: created at ${skipped_run.created_at} because of keep_minimum_runs=${keep_minimum_runs}`);
           }
         }
         console.log(`💬 Deleting ${wf_runs.length} runs for '${workflow.name}' workflow on '${branchName}'`);
